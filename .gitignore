@@ -4,5 +4,6 @@
 .env
 .venv/
 /DataSets/__pycache__
+/Models/__pycache__
 
 

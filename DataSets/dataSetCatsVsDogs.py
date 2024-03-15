@@ -80,8 +80,7 @@ class DataSet_Img_To_Label(Dataset):
 
 
         #* Apply the corresponding transformation to the data.
-        if(self.transform_img != None):
-            img = self.transform_img(img)
+        img = self.transform_img(img)
 
         if(self.transform_label != None):
             mask = self.transform_label(mask)
