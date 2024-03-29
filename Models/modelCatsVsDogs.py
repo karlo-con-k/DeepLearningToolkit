@@ -44,7 +44,7 @@ class modelCNN(nn.Module):
         out = self.pool_3(out)
         out = self.flat_1(out)
         out = self.dens_1(out)
-        return out;
+        return out
 
 
     def __str__(self):

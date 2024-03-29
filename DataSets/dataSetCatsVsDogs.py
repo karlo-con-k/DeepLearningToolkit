@@ -19,7 +19,7 @@ identity_transform = transforms.Compose([
 
 class DataSet_Img_To_Label(Dataset):
     def __init__(self, root_Data,
-                transform_img = identity_transform, transform_label = None, test = False):
+                transform_img = identity_transform, transform_label = None, test = False, dataSize = 100):
         super(DataSet_Img_To_Label, self).__init__()
 
         '''
@@ -40,7 +40,8 @@ class DataSet_Img_To_Label(Dataset):
         images = os.listdir(self.root_Data)
 
         if(test == True): #* return a test DataSet
-            images = images[0:10]
+            dataSize = min(len(images), dataSize)
+            images = images[0:dataSize]
 
         print("images.size() = ", len(images))
 
