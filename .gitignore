@@ -5,5 +5,5 @@
 .venv/
 /DataSets/__pycache__
 /Models/__pycache__
-
+/FitFunctions/__pycache__
 

@@ -40,6 +40,7 @@ class DataSet_Img_To_Label(Dataset):
         images = os.listdir(self.root_Data)
 
         if(test == True): #* return a test DataSet
+            #*todo this will only return dogs
             dataSize = min(len(images), dataSize)
             images = images[0:dataSize]
 
