@@ -87,7 +87,7 @@ def train_modelCNN(data_loader, model, opt_model, device, data_loader_Val = None
         torch.save({ 
             'model_state_dict': model.state_dict(), 
             'optimizer_state_dict': opt_model.state_dict(), 
-            }, 'checpoint_epoch_'+str(epoch)+'.pt')
+            }, 'checpoint_epoch_'+str(epoch + 1)+'.pt')
 
 
     if(get_History):
