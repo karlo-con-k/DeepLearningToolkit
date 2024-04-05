@@ -24,7 +24,6 @@ class DataSet_Img_To_Label(Dataset):
 
         '''
             A dataset of models from images to labels. In this case, is for a classifier cats vs dogs
-
             root_Data       = Path to the data images folder
             transform_img   = Transformation for the images
             transform_label = Transformation for the label
@@ -39,12 +38,11 @@ class DataSet_Img_To_Label(Dataset):
         #* Create a list of the name of the files in the root_Data.
         images = os.listdir(self.root_Data)
 
-        if(test == True): #* return a test DataSet
+        #* return a test DataSet
+        if(test == True):
             #*todo this will only return dogs
             dataSize = min(len(images), dataSize)
             images = images[0:dataSize]
-
-        print("images.size() = ", len(images))
 
         list_Label = ["0"]*len(images) 
 
@@ -56,7 +54,7 @@ class DataSet_Img_To_Label(Dataset):
             elif(name_image[0] == 'c'):
                 list_Label[idx] = 1
 
-        #* Save a list of tuples with the file name and the label like this [('cat.0.jpg', 1)]
+        #* Save a list of tuples like this [('cat.0.jpg', 1)]
         self.data = list(zip(images, list_Label)) 
 
     def __len__(self):
@@ -64,10 +62,10 @@ class DataSet_Img_To_Label(Dataset):
 
     def __getitem__(self, index = None):
         '''
+            It return two elements, the image as np.array and the label
+            Index = Image position that we will return.
             If index != None return the image of the position index and the label. 
             In other case index = random and do the same.
-
-            Index = Image position that we will return.
         '''
 
         if(index != None):
