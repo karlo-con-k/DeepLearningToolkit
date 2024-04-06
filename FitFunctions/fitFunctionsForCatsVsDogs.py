@@ -1,12 +1,15 @@
 
 import torch
 import torch.nn as nn
+import os
 from tqdm import tqdm
+
 
 
 def train_modelCNN(data_loader, model, opt_model, device, data_loader_Val = None, 
                     num_epochs = 1, criterion = torch.nn.CrossEntropyLoss(), 
-                    get_History = True, getValLoos = False):
+                    get_History = True, getValLoos = False,
+                    model_save_dir = None):
     '''
         Fit function for a clasificator cat vs dog model. This function will 
         save the models in each epoch, and it return the history if we whant.
@@ -21,7 +24,7 @@ def train_modelCNN(data_loader, model, opt_model, device, data_loader_Val = None
         criterion       = losst function of the model
         getValLoos      = if we whant to get the loos in the validation dataset during the training  
     '''
-
+    
     if(get_History):
         history = {
                     "MAE" : [],
@@ -85,10 +88,9 @@ def train_modelCNN(data_loader, model, opt_model, device, data_loader_Val = None
 
         #* Save the model afther the epoch
         torch.save({ 
-            'model_state_dict': model.state_dict(), 
-            'optimizer_state_dict': opt_model.state_dict(), 
-            }, 'checpoint_epoch_'+str(epoch + 1)+'.pt')
-
+                'model_state_dict': model.state_dict(), 
+                'optimizer_state_dict': opt_model.state_dict(), 
+            }, os.path.join(model_save_dir, f'checkpoint_epoch_{epoch + 1}.pt'))
 
     if(get_History):
         return history
