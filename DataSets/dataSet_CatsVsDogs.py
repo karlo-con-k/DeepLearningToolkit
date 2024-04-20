@@ -8,27 +8,31 @@ from PIL import Image
 
 import torchvision.transforms as transforms
 
+                    #* Compose = compoues a list of function
 identity_transform = transforms.Compose([
-                        #* Compose = compoues a list of function
-                        transforms.ToPILImage(),
                         #* ToPILImage = cahnge the data type from PyTorch tensor or a NumPy ndarray to : A PIL (Python Imaging Library)
-                        transforms.ToTensor(), 
+                        transforms.ToPILImage(),
                         #* change the data type from Numpy or PIL to tensor
+                        transforms.ToTensor(), 
                         ])
 
 
 class DataSet_Img_To_Label(Dataset):
+    '''
+        A dataset of models from images to labels. In this case, is for a classifier cats vs dogs
+        root_Data       = Path to the data images folder
+        transform_img   = Transformation for the images
+        transform_label = Transformation for the label
+        test            = If is true we will return a dataset of 10 elements for do testing
+    ''' 
+
     def __init__(self, root_Data,
-                transform_img = identity_transform, transform_label = None, test = False, dataSize = 100):
+                transform_img   = identity_transform, 
+                transform_label = None, 
+                test     = False, 
+                dataSize = 100):
         super(DataSet_Img_To_Label, self).__init__()
 
-        '''
-            A dataset of models from images to labels. In this case, is for a classifier cats vs dogs
-            root_Data       = Path to the data images folder
-            transform_img   = Transformation for the images
-            transform_label = Transformation for the label
-            test            = If is true we will return a dataset of 10 elements for do testing
-        ''' 
 
         self.data = []
         self.root_Data       = root_Data
