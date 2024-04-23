@@ -119,7 +119,7 @@ def getMSE(model, data_loader, criterion, batch_size, device):
         Return the accuracy of the model in the data loader
     '''
 
-    #Todo test this function 
+    #Todo test this function   
     #* Set the model to evaluation mode
     model.eval()
 
