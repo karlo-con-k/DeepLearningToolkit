@@ -3,45 +3,28 @@ import torch
 import torch.nn as nn
 import os
 from tqdm import tqdm
+import torch.nn.functional as F
 
 
 
-def train_modelCNN(data_loader, model, opt_model, device, 
+def train_modelSuperResolution(data_loader, model, opt_model, device, 
                     data_loader_Val = None, 
-                    num_epochs = 1, criterion = torch.nn.CrossEntropyLoss(), 
+                    num_epochs = 1, criterion = F.mse_loss, 
                     get_History = True, getValLoos = False,
                     model_save_dir = None):
     '''
         Fit function for a clasificator cat vs dog model. This function will 
         save the models in each epoch, and it return the history if we whant.
 
-        Parameters
-        -----------
-
-        data_loader : DataLoader  
-            index list of the batch tensors of the dataset
-        model : nn.Module
-            model to fit
-        opt_model : optim  
-            optimization algorihm
-        device : str
-            device that will use like GPU
-        data_loader_Val : DataLoader, optional
-            index list of the batch tensors of the dataset validation
-        num_epochs : int, optional  
-            number of epochs to train the model (default is 1)
-        criterion :  torch.nn.Module, optional
-            loss function of the model
-        get_History : bool, optional
-            if we whant to get the losst historial of the model 
-        getValLoos : bool, optional 
-            if we whant to get the loos in the validation dataset during the training  
-        model_save_dir : str, optional
-            directory to save the trained model (default is None)
-
-        Returns
-        -------
-            history of the training process, if get_History is True, otherwise None
+        data_loader     = index list of the batch tensors of the dataset
+        model           = model to fit
+        opt_model       = optimization algorihm
+        device          = device that will use like GPU
+        data_loader_Val = index list of the batch tensors of the dataset validation
+        get_History     = if we whant to get the historial of the model 
+        history         = if true, then create a history dictionary and will append the values loss, and accuracy
+        criterion       = losst function of the model
+        getValLoos      = if we whant to get the loos in the validation dataset during the training  
     '''
     
     if(get_History):
@@ -54,10 +37,10 @@ def train_modelCNN(data_loader, model, opt_model, device,
     
     model.to(device)
     model.train()
-    sizeDataSet = len(data_loader.dataset)              #* size of the dataSet i.e number of images
+    sizeDataSet = len(data_loader.dataset)          #* size of the dataSet i.e number of images
     
     if(data_loader_Val is not None):
-        sizeDataSetVal = len(data_loader_Val.dataset)   #* size of the dataSetVal 
+        sizeDataSetVal = len(data_loader_Val.dataset)      #* size of the dataSetVal 
     else:
         sizeDataSetVal = 1
 
@@ -69,12 +52,12 @@ def train_modelCNN(data_loader, model, opt_model, device,
         #* This will be the Mean Absolute Error of the dataSet 
         model_total_loss  = 0
         loop = tqdm(enumerate(data_loader), total = len(data_loader))
-        for batch_idx, (img, label) in loop:
-            img        = img.to(device)
-            label      = label.to(device) #! label = label.float().to(device) 
+        for batch_idx, (imgInput, imgOutput) in loop:
+            imgInput  = imgInput.to(device)
+            imgOutput = imgOutput.to(device) #! imgOutput = imgOutput.float().to(device) 
             opt_model.zero_grad()
-            prediction = model(img)
-            loss  = criterion(prediction, label)
+            prediction = model(imgInput)
+            loss  = criterion(prediction, imgOutput)
             #* loss.item() for get the value of the tensor.
             model_total_loss += loss.item()*batch_size      
             loss.backward()
@@ -91,13 +74,14 @@ def train_modelCNN(data_loader, model, opt_model, device,
             history["ACC"].append(model_total_loss/sizeDataSet) 
 
         #TODO ADD Val ACC
-        if(getValLoos == True):
+        if(getValLoos == True): 
             model_total_loss_Val = 0
-            for idx, (img, label) in enumerate(data_loader_Val):
-                img        = img.to(device)
-                label      = label.to(device)
-                prediction = model(img)
-                loss       = criterion(prediction, label)      
+            for idx, (imgInput, imgOutput) in enumerate(data_loader_Val):
+                #todo remove the enumerate
+                imgInput        = imgInput.to(device)
+                imgOutput      = imgOutput.to(device)
+                prediction = model(imgInput)
+                loss       = criterion(prediction, imgOutput)      
                 model_total_loss_Val += loss.item()*batch_size     
 
             if(get_History):
@@ -113,16 +97,20 @@ def train_modelCNN(data_loader, model, opt_model, device,
 
     if(get_History):
         return history
+    
 
-
-def getAccuracy(model, data_loader, device):
+def getMSE(model, data_loader, criterion, batch_size, device):
     '''
         Parameters
         -----------
         data_loader : DataLoader  
-            index list of the batch tensors of the dataset
+            Index list of the batch tensors of the dataset
         model : nn.Module
-            model to fit
+            Model to fit
+        criterion :  torch.nn.Module, optional
+            Loss function of the model
+        batch_size : int
+            Batch size
         device : str
             Device that we use like GPU
 
@@ -132,23 +120,17 @@ def getAccuracy(model, data_loader, device):
     '''
 
     #Todo test this function 
-
-    correct = 0
-    total = 0
     #* Set the model to evaluation mode
     model.eval()
 
     with torch.no_grad(): #* Disable gradient computation
-        for imgs, labels in data_loader:
-            imgs = imgs.to(device)
-            labels = labels.to(device)
-            outputs = model(imgs)
-            #* Get the index of the maximum predicted value
-            _, predicted = torch.max(outputs, 1)  
-            #* Increment the total count by the batch size
-            total   += labels.size(0)
-            #* Count the number of correct predictions
-            correct += (predicted == labels).sum().item()  
-    
-    accuracy = correct / total  # Compute the accuracy
-    return accuracy
+        model_total_loss = 0
+        for idx, imgsInput, imgsOutput in enumerate(data_loader):
+            imgsInput  = imgsInput.to(device)
+            imgsOutput = imgsOutput.to(device)
+            prediction = model(imgsInput)
+            loss       = criterion(imgsInput, prediction)
+            
+            model_total_loss += loss.item()*batch_size  
+        
+    return model_total_loss

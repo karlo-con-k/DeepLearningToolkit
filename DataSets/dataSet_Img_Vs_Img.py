@@ -33,7 +33,6 @@ class DataSet_Img_To_Img(Dataset):
                 dataSize = 100):
         super(DataSet_Img_To_Img, self).__init__()
 
-
         self.data = []
         self.root_Data   = root_Data
         self.transfor_InPut_img  = transfor_In_img
@@ -52,6 +51,7 @@ class DataSet_Img_To_Img(Dataset):
 
         #* Save a list of tuples like ([inPut_img.1.jpg, outPut_img1.1.jpg])
         self.data = list(zip(inPut_Images, outPut_Images))
+        print("Size data set lower definition", len(inPut_Images))
 
     def __len__(self):
         return len(self.data)
