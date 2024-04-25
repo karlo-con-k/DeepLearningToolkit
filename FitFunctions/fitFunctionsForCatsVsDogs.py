@@ -83,8 +83,8 @@ def train_modelCNN(data_loader, model, opt_model, device,
 
         train_ACC = train_ACC / sizeDataSet
         train_MAE = train_MAE / sizeDataSet
-        print(f'Epoch completed, Average Loss in TRAIN (MAE): {train_MAE:.4f}')
-        print(f'Epoch completed, Average accuracy in TRAIN (ACC): {train_ACC:.4f}')
+        print(f'Epoch completed, TRAIN MAE: {train_MAE:.4f}')
+        print(f'Epoch completed, TRAIN ACC: {train_ACC:.4f}')
 
         if(get_History): 
             history["train_MAE"].append(train_MAE) 
@@ -97,11 +97,12 @@ def train_modelCNN(data_loader, model, opt_model, device,
                                                     batch_size  = batch_size, 
                                                     device      = device)
 
-            print(f'Epoch completed, MAE in VAL: {(MAE_Val):.4f}')
-            print(f'Epoch completed, ACC in VAL: {(ACC_Val):.4f}')
+            print(f'Epoch completed, VAL MAE: {(MAE_Val):.4f}')
+            print(f'Epoch completed, VAL ACC: {(ACC_Val):.4f}')
             history["val_MAE"].append(MAE_Val)
             history["val_ACC"].append(ACC_Val)
 
+        #todo save the best model
         #* Save the model afther the epoch
         torch.save({ 
                 'model_state_dict': model.state_dict(), 
@@ -157,3 +158,6 @@ def getAccuracy_and_MAE(model, data_loader, criterion, batch_size, device):
     model_MAE = model_MAE / size_data_loader
 
     return model_ACC, model_MAE
+
+
+

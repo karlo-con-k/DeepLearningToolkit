@@ -6,6 +6,7 @@ It has
 - Data Set image to label
 - Data Set image to image
 - FitFunction for model from image to two labels.
+- FitFunction for model from image to image.
 
 
 
