@@ -54,7 +54,7 @@ def train_modelCNN(data_loader, model, opt_model, device,
     if(get_History or getVal):
         history = {
                     "train_MAE" : [],
-                    "train_ACC" : [] #todo add the ACC
+                    "train_ACC" : [] 
                     }
         if(getVal == True):
             history['val_MAE'] = []
@@ -348,7 +348,7 @@ class trainerCatsVsDogs:
             #* Get the ACC, and MAE in val dataSet and plot them, if we have validation data.
             if(self.dataSet_Val != None):
                 ACC_Val, MAE_Val = self.getAccuracy_and_MAE( 
-                                                    data_loader = self.data_loader_Val, 
+                                                    data_loader = self.data_loader_Val,
                                                     criterion   = criterion, 
                                                     )
 
@@ -356,9 +356,18 @@ class trainerCatsVsDogs:
                 print(f'Epoch completed, VAL ACC: {(ACC_Val):.4f}')
                 self.history["val_MAE"].append(MAE_Val)
                 self.history["val_ACC"].append(ACC_Val)
-
-            #* Save the model every epoch
-            torch.save({ 
-                'model_state_dict': self.model.state_dict(), 
-                'optimizer_state_dict': opt_model.state_dict(), 
-            }, os.path.join(self.model_save_dir, f'checkpoint_epoch_{epoch + 1}.pt'))
+                
+                #* Save the best model in ACC_Val
+                if(epoch == 1 or ACC_Val >= min(self.history["val_ACC"])):
+                    torch.save({ 
+                        'model_state_dict': self.model.state_dict(), 
+                        'optimizer_state_dict': opt_model.state_dict(), 
+                    }, os.path.join(self.model_save_dir, f'checkpoint_epoch_{epoch + 1}_ACC_Val_{"{:.3f}".format(ACC_Val)}.pt'))
+            
+            #* If we do not compute ACC_Val, save the best model in train_ACC
+            else:
+                if(epoch == 1 or train_ACC >= min(self.history["train_ACC"])):
+                    torch.save({ 
+                        'model_state_dict': self.model.state_dict(), 
+                        'optimizer_state_dict': opt_model.state_dict(), 
+                    }, os.path.join(self.model_save_dir, f'checkpoint_epoch_{epoch + 1}_train_ACC_{"{:.3f}".format(train_ACC)}.pt'))
