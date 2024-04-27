@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 def train_modelCNN(data_loader, model, opt_model, device, 
                     data_loader_Val = None, 
-                    num_epochs = 1, criterion = torch.nn.CrossEntropyLoss(), 
+                    num_epochs  = 1, criterion = torch.nn.CrossEntropyLoss(), 
                     get_History = True, getVal = False,
                     model_save_dir = None):
     '''
@@ -187,7 +187,7 @@ class trainerCatsVsDogs:
 
         Methods
         -------
-        fitModel(opt_model  : torch.optim, 
+        trainModel(opt_model  : torch.optim, 
                 criterion  : torch.nn.Module = torch.nn.CrossEntropyLoss(),
                 num_epochs : int = 1)
             Train the model for the specified number of epochs.
@@ -288,7 +288,7 @@ class trainerCatsVsDogs:
 
         return model_ACC, model_MAE
 
-    def fitModel(self, 
+    def trainModel(self, 
                 opt_model  : torch.optim, 
                 criterion  : torch.nn.Module = torch.nn.CrossEntropyLoss(),
                 num_epochs : int = 1):
@@ -306,7 +306,7 @@ class trainerCatsVsDogs:
         '''
 
         if num_epochs < 0:
-            raise ValueError('num_epochs should be non-negative') #todo test
+            raise ValueError('num_epochs should be non-negative') 
 
         sizeDataSet = len(self.data_loader.dataset) 
         self.model.to(self.device)
