@@ -11,7 +11,7 @@ def plot_img_tensor(tensor,
 
     image_array = tensor[plot_channels].detach().cpu().numpy()
     image_array = np.transpose(image_array, (1, 2, 0))
-    print(image_array.shape)
+    print("image_array.shape = ", image_array.shape)
     plt.imshow(image_array)
     plt.axis('off')  # Turn off axis
     plt.title(title)

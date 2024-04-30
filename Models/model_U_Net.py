@@ -137,9 +137,9 @@ class model_U_Net(nn.Module):
         outPut = self.conv10(outPut)
 
         outPut = self.upConv1(outPut)
-        outPut = torch.cat((outPut, copy4)) #* concatenate the tensors
+        outPut = torch.cat((outPut, copy4))         #* concatenate the tensors
         # print("outPut befor up = ", outPut.shape) #* must be 28x28x1024
-        # print("outPut post up = ", outPut.shape) #* must be 28x28x1024
+        # print("outPut post up = ", outPut.shape)  #* must be 28x28x1024
 
         outPut = self.conv11(outPut)
         outPut = self.conv11_1(outPut)
