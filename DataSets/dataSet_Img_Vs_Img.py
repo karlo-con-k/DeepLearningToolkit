@@ -42,7 +42,10 @@ class DataSet_Img_To_Img(Dataset):
         #* Create a list of the name of the files in the root_Datas.
         inPut_Images  = os.listdir(self.root_Data[0])
         outPut_Images = os.listdir(self.root_Data[1])
+        #TODO if the names are diferents this do now work well 
 
+        if(len(inPut_Images) != len(outPut_Images)):
+            print("len(inPut_Images) != len(outPut_Images)")
 
         if(test == True):
             dataSize = min(len(inPut_Images), dataSize)
@@ -61,18 +64,16 @@ class DataSet_Img_To_Img(Dataset):
 
         #* Read the images, transform them into an array, and only use the first 3 channels.
         inPut_Img_file = self.data[index][0]
-        # print(self.root_Data[0] + '/' + inPut_Img_file)
         inPut_Img_pth = os.path.join(self.root_Data[0] + '/' + inPut_Img_file)
         inPut_Img  = np.array(Image.open(inPut_Img_pth))
         inPut_Img  = inPut_Img [:, :, :3]
-        # print("input = ", inPut_Img)
         
         outPut_Img_file = self.data[index][1]
-        # print(self.root_Data[1] + '/' + outPut_Img_file)
         outPut_Img_pth = os.path.join(self.root_Data[1] + '/' + outPut_Img_file)
         outPut_Img  = np.array(Image.open(outPut_Img_pth))
-        outPut_Img  = outPut_Img [:, :, :3]
+        # chanels = min(np.array(Image.open(outPut_Img_pth)).shape[0], 1)
 
+        outPut_Img  = outPut_Img [:, :]
 
         #* Apply the corresponding trasformations. Could be data aumentation functions
         inPut_Img  = self.transfor_InPut_img(inPut_Img)
