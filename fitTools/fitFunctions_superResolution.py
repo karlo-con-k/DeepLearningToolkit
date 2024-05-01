@@ -271,9 +271,80 @@ class fitertImgToImg():
 
 
 
+class fiterU_Net(fitertImgToImg):
 
+    def __init__(self, 
+                model: nn.Module, 
+                dataSet, 
+                device: str = "cpu", 
+                batch_size: int = 64, 
+                dataSet_Val = None, 
+                model_save_dir: str = None):
+        super().__init__(model, dataSet, device, batch_size, dataSet_Val, model_save_dir)
 
+    def trainModel(self,
+                opt_model  : torch.optim, 
+                criterion  : torch.nn.Module = torch.nn.CrossEntropyLoss(),
+                num_epochs : int = 1):
+        '''
+            Funtion for train the model U-Net, we only change the line 
+            loss = criterion(modelOutPut, imgOutPut) for the line
+            loss = criterion(modelOutPut[:,0,:,:],imgOutPut[:,0,:,:])
+        '''
 
+        if num_epochs < 0:
+            raise ValueError('num_epochs should be non-negative')
+        
+        sizeDataSet =len(self.data_loader.dataset)
+        self.model.to(self.device)
+
+        for epoch in range(num_epochs):
+            loop = tqdm(enumerate(self.data_loader), total = len(self.data_loader))
+            self.model.train() #* model in train mood
+            train_MAE = 0
+            for batch_idx, (imgInput, imgOutPut) in loop:
+                imgInput  =  imgInput.to(self.device)
+                imgOutPut = imgOutPut.to(self.device)
+                opt_model.zero_grad()
+                modelOutPut = self.model(imgInput)
+                
+                #* Get the batch loss and computing train MAE
+                loss       = criterion(modelOutPut[:,0,:,:],imgOutPut[:,0,:,:])
+                train_MAE += loss.item()*self.batch_size
+
+                #* Get gradients, and update the parameters of the model
+                loss.backward()
+                opt_model.step()
+
+                #* Plot the loss and the progress bar
+                loop.set_description(f"Epoch {epoch+1}/{num_epochs} process: {int((batch_idx / len(self.data_loader)) * 100)}")
+                loop.set_postfix(modelLoss = loss.data.item())
+
+            train_MAE = train_MAE / sizeDataSet
+            print(f'Epoch completed, TRAIN MAE {train_MAE:.4f}')
+            self.history["train_MAE"].append(train_MAE)
+
+            if(self.dataSet_Val is not None):
+                val_MAE = self.getMAE(data_loader = self.data_loader_Val, criterion = criterion)
+                #* We could try a diferent criterio for the val case in the same dataset.
+
+                print(f'Epoch completed, VAL MAE: {(val_MAE):4f}')
+                self.history["val_MAE"].append(val_MAE)
+
+                #* Save the best model in val_MAE
+                if(val_MAE >= min(self.history["val_MAE"])):
+                    torch.save({
+                        'model_state_dict': self.model.state_dict(),
+                        'optimizer_state_dict':opt_model.state_dict()
+                    }, os.path.join(self.model_save_dir, f'checkpoint_epoch_{epoch + 1}_Val_MAE_{"{:.3f}".format(val_MAE)}.pt'))
+            
+            #* If we don have val_MAE, save in function of train_MAE
+            else:
+                if(train_MAE >= min(self.history["train_MAE"])):
+                    torch.save({
+                        'model_state_dict' : self.model.state_dict(),
+                        'optimizer_state_dict' : opt_model.state_dict()
+                    }, os.path.join(self.model_save_dir, f'checkpoint_epoch_{epoch + 1}_Train_MAE_{"{:.3f}".format(train_MAE)}.pt'))
 
 
 
