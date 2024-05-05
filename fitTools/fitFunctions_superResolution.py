@@ -231,7 +231,7 @@ class fitertImgToImg():
                 
                 #* Get the batch loss and computing train MAE
                 loss       = criterion(modelOutPut, imgOutPut)
-                train_MAE += loss.item()*self.batch_size
+                train_MAE += loss.item()*imgInput.shape[0] #* imgInput.shape[0] = self.batch_size, but the last batch could be diferente size
 
                 #* Get gradients, and update the parameters of the model
                 loss.backward()
@@ -304,13 +304,24 @@ class fiterU_Net(fitertImgToImg):
             train_MAE = 0
             for batch_idx, (imgInput, imgOutPut) in loop:
                 imgInput  =  imgInput.to(self.device)
-                imgOutPut = imgOutPut.to(self.device)
+                imgOutPut = imgOutPut.to(self.device, torch.long)
                 opt_model.zero_grad()
+
                 modelOutPut = self.model(imgInput)
+                # modelOutPut = modelOutPut
+                # imgOutPut   = imgOutPut
                 
                 #* Get the batch loss and computing train MAE
-                loss       = criterion(modelOutPut[:,0,:,:],imgOutPut[:,0,:,:])
-                train_MAE += loss.item()*self.batch_size
+
+                # print(modelOutPut.shape, imgOutPut.shape)
+                # print(imgOutPut.shape)
+                # print(imgOutPut.shape)
+                modelOutPut = modelOutPut.view(imgInput.shape[0], 2, -1)
+                imgOutPut = imgOutPut.view(imgInput.shape[0],  1, 68*68).squeeze(1)
+                imgOutPut = imgOutPut.squeeze(1)
+
+                loss       =  criterion(modelOutPut, imgOutPut)
+                train_MAE += loss.item()*imgInput.shape[0] #* imgInput.shape[0] = self.batch_size, but the last batch could be diferente size
 
                 #* Get gradients, and update the parameters of the model
                 loss.backward()
