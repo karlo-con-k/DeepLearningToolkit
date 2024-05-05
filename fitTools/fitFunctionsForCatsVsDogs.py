@@ -325,6 +325,7 @@ class trainerCatsVsDogs:
                 outputs = self.model(imgs)
 
                 #* Get the preditions and the loss for the batch
+                # print(outputs.shape, labels.shape)
                 loss       = criterion(outputs, labels)  
                 train_MAE += loss.item()*self.batch_size  
                 prediction = torch.max(outputs, 1)[1]  
