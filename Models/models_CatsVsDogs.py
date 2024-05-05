@@ -76,7 +76,7 @@ class modelCNN(nn.Module):
         print(WIDTH)
 
         self.flat_1 = nn.Linear(WIDTH*HEIGHT*64, 10)  
-        self.Relu   = nn.ReLU()
+        self.Relu   = nn.Softmax()
 
         self.dens_1 = nn.Sequential(
             nn.Linear(in_features = 10, out_features = 2),
@@ -176,7 +176,7 @@ class modelSiLU(nn.Module):
         WIDTH  = (WIDTH - 2)//2 + 1
 
         self.flat_1 = nn.Linear(HEIGHT*WIDTH*64, 10)  
-        self.SiLU   = nn.SiLU()
+        self.SiLU   = nn.Softmax()
 
         self.dens_1 = nn.Sequential(
             nn.Linear(in_features = 10, out_features = 2),
