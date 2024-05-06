@@ -16,7 +16,7 @@ def train_modelCNN(data_loader, model, opt_model, device,
                     model_save_dir = None):
     '''
         Fit function for a clasificator cat vs dog model. This function will 
-        save the models in each epoch, and it return the history if we whant.
+        save the models in each epoch, and it return the history if we whant.  
 
         Attributes
         -----------
@@ -184,23 +184,26 @@ class trainerCatsVsDogs:
             The dataset containing the validation data (default is None).
         model_save_dir : str, optional
             The directory where trained models will be saved (default is None).
+        history : dict
+            A dictionary with keys "train_MAE", "train_ACC", "val_ACC" and "val_MAE",
+            and the values are lists with the historial of the respective key variable.
+        data_loader : DataLoader
+            A DataLoader make with the dataSet.
+        data_loader_Val : DataLoader
+            A DataLoader make with the dataSet_Val.    
 
         Methods
         -------
-        trainModel(opt_model  : torch.optim, 
-                criterion  : torch.nn.Module = torch.nn.CrossEntropyLoss(),
-                num_epochs : int = 1)
-            Train the model for the specified number of epochs.
+        trainModel(opt_model   : torch.optim, 
+                    criterion  : torch.nn.Module = torch.nn.CrossEntropyLoss(),
+                    num_epochs : int = 1) -> None:
+            Train the model for 'num_epochs' epochs, using the loss function 'criterion' 
+            and the optimizer 'opt_model'.
 
-        Returns
-        -------
-        history : dict or None
-            A dictionary containing the training history (if get_History is True), otherwise None.
-            The history includes the following metrics:
-            - "train_MAE": List of training mean absolute error (MAE) for each epoch.
-            - "train_ACC": List of training accuracy for each epoch.
-            - "val_MAE": List of validation MAE for each epoch (if validation data is provided).
-            - "val_ACC": List of validation accuracy for each epoch (if validation data is provided).
+        getAccuracy_and_MAE(self, criterion : torch.nn.Module, data_loader : DataLoader)
+            Return a tuple with the ACC in 'data_loader', and MAE in  'DataLoader' using
+            'criterion'
+
     '''
 
     def __init__(self, 
@@ -210,6 +213,23 @@ class trainerCatsVsDogs:
                 batch_size : int = 64,
                 dataSet_Val = None, 
                 model_save_dir : str =  None):
+        '''
+            Initializes a new instance of the class trainerCatsVsDogs.
+
+            Args:
+            model : nn.Module
+                The model to train. Need to be from img to labels with two classes.
+            dataSet : Dataset
+                The dataset containing the training data. Need to be a img vs labels dataset
+            device : str
+                The environment devicedevice for the training.
+            batch_size : int, optional
+                The batch size used for training (default is 64)
+            dataSet_Val : Dataset, optional
+                The validation data set. 
+            model_save_dir : str, optional
+                The path were we save the models during the training
+        '''
 
         if(model_save_dir is None):
             raise ValueError('model_save_dir could not be None') 
@@ -243,18 +263,20 @@ class trainerCatsVsDogs:
                                     batch_size  = self.batch_size,
                                     num_workers = 0,
                                     shuffle = True)
+        else:
+            self.data_loader_Val = None
 
     
     def getAccuracy_and_MAE(self, criterion : torch.nn.Module, data_loader : DataLoader):
         '''
+            Compute and return de ACC and MAE in data_loader with criterion.
+
             Parameters
             ----------
             data_loader : DataLoader  
                 index list of the batch tensors of the dataset
             criterion :  torch.nn.Module, optional
                 loss function of the model
-            device : str
-                Device that we use like GPU
 
             Returns
             -------

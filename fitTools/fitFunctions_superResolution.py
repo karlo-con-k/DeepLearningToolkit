@@ -4,142 +4,70 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 from torch import optim
+import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 
-
-def train_modelSuperResolution(data_loader, model, opt_model, device, 
-                    data_loader_Val = None, 
-                    num_epochs = 1, criterion = F.mse_loss, 
-                    get_History = True, getValLoos = False,
-                    model_save_dir = None):
-    '''
-        Fit function for a clasificator cat vs dog model. This function will 
-        save the models in each epoch, and it return the history if we whant.
-
-        data_loader     = index list of the batch tensors of the dataset
-        model           = model to fit
-        opt_model       = optimization algorihm
-        device          = device that will use like GPU
-        data_loader_Val = index list of the batch tensors of the dataset validation
-        get_History     = if we whant to get the historial of the model 
-        history         = if true, then create a history dictionary and will append the values loss, and accuracy
-        criterion       = losst function of the model
-        getValLoos      = if we whant to get the loos in the validation dataset during the training  
-    '''
-
-    if(get_History):
-        history = {
-                    "MAE" : [],
-                    "ACC" : [] #todo add the ACC
-                    }
-        if(getValLoos == True):
-            history['MAE_Val'] = []
-
-    model.to(device)
-    model.train()
-    sizeDataSet = len(data_loader.dataset)          #* size of the dataSet i.e number of images
-    
-    if(data_loader_Val is not None):
-        sizeDataSetVal = len(data_loader_Val.dataset)      #* size of the dataSetVal 
-    else:
-        sizeDataSetVal = 1
-
-    batch_size  = data_loader.batch_size
-
-
-    for epoch in range(num_epochs):
-
-        #* This will be the Mean Absolute Error of the dataSet 
-        model_total_loss  = 0
-        loop = tqdm(enumerate(data_loader), total = len(data_loader))
-        for batch_idx, (imgInput, imgOutput) in loop:
-            imgInput  = imgInput.to(device)
-            imgOutput = imgOutput.to(device) #! imgOutput = imgOutput.float().to(device) 
-            opt_model.zero_grad()
-            prediction = model(imgInput)
-            loss  = criterion(prediction, imgOutput)
-            #* loss.item() for get the value of the tensor.
-            model_total_loss += loss.item()*batch_size      
-            loss.backward()
-            opt_model.step()
-            loop.set_description(f"Epoch {epoch+1}/{num_epochs} process: {int((batch_idx / len(data_loader)) * 100)}")
-            loop.set_postfix(modelLoss = loss.data.item())
-
-        avg_loss = model_total_loss / sizeDataSet
-        print(f'Epoch completed, Average Loss: {avg_loss:.4f}')
-
-        if(get_History): 
-            history["MAE"].append(model_total_loss/sizeDataSet) 
-            #TODO define well the ACC
-            history["ACC"].append(model_total_loss/sizeDataSet) 
-
-
-        if(getValLoos == True): 
-
-            val_MSE = getMAE(model = model, 
-                            data_loader = data_loader,
-                            criterion = criterion,
-                            batch_size = batch_size,
-                            device = device)
-
-            if(get_History):
-                history["MAE_Val"].append(val_MSE/sizeDataSetVal)
-            print(f'Epoch completed, Average Val Loss: {(val_MSE/sizeDataSetVal):.4f}')
-
-        #* Save the model afther the epoch
-        torch.save({ 
-                'model_state_dict': model.state_dict(), 
-                'optimizer_state_dict': opt_model.state_dict(), 
-            }, os.path.join(model_save_dir, f'checkpoint_epoch_{epoch + 1}.pt'))
-
-    if(get_History):
-        return history
-    
-
-def getMAE(model, data_loader, criterion, batch_size, device):
-    '''
-        Parameters
-        -----------
-        data_loader : DataLoader  
-            Index list of the batch tensors of the dataset
-        model : nn.Module
-            Model to fit
-        criterion :  torch.nn.Module, optional
-            Loss function of the model
-        batch_size : int
-            Batch size
-        device : str
-            Device that we use like GPU
-
-        Returns
-        -------
-        Return the accuracy of the model in the data loader
-    '''
-
-    #Todo test this function   
-    #* Set the model to evaluation mode
-    model.eval()
-
-    with torch.no_grad(): #* Disable gradient computation
-        model_total_loss = 0
-
-        for idx, imgsInput, imgsOutput in enumerate(data_loader):
-            imgsInput  = imgsInput.to(device)
-            imgsOutput = imgsOutput.to(device)
-            prediction = model(imgsInput)
-            loss       = criterion(imgsInput, prediction)
-
-            model_total_loss += loss.item()*batch_size  
-
-    return model_total_loss
-
-
-
 class fitertImgToImg():
     '''
-        Base class for img to img models
+        This class is for train a img to img models and test it. 
+        It saves the models at the end of each epoch and save the training history.
+
+        .. warning::
+            For use the trainModel method the model output, and the outPut imgs of the
+            data_loader need to be compatibles using the funcion criterion 
+            in the trainModel method.
+
+        Attributes
+        ----
+            model : nn.Module
+                The model to train.
+            dataSet : Dataset
+                The dataset containing the training data.
+            history : dict
+                A dictionary with keys "train_MAE" and "val_MAE" and the values 
+                are historial lists of that value. 
+            device  : str
+                The environment devicedevice where we will do our calculations.
+            batch_size : int, optional
+                The batch size used for training (default is 64)
+            dataSet_Val : Dataset, optional
+                The validation data set. 
+            model_save_dir : str, optional
+                The path were we save the model
+            training_epochs : int
+                Number of training epochs the model has undergone.
+            data_loader : torch.utils.data.DataLoader
+                A DataLoader make with the dataSet.
+            data_loader_Val : torch.utils.data.DataLoader
+                A DataLoader make with the dataSet_Val.
+
+        Methods
+        -------
+            getMAE(
+                    data_loader : DataLoader, 
+                    criterion : torch.nn.Module = torch.nn.CrossEntropyLoss()
+                    ) -> float:
+                Return the MAE in the 'DataLoader' using 'criterios'.
+
+            trainModel(
+                        opt_model  : torch.optim.Optimizer,  
+                        criterion  : torch.nn.Module = torch.nn.CrossEntropyLoss(),
+                        num_epochs : int = 1
+                        ) -> None:
+                Train the model using 'num_epochs', 'criterion', 'opt_model', and 
+                the 'data_loader' attributes class.
+            plotHistory(
+                        intervalTrain : list[int] = None, 
+                        intervalValidation : list[int] = None
+                        )->None:
+                Plot the attribute history.
+            predict(
+                    index : int = 0, 
+                    imgPath : str = None
+                    ) -> tensor:
+                Compute the prediction using the model.          
     '''
 
     def __init__(self,
@@ -149,24 +77,44 @@ class fitertImgToImg():
                 batch_size : int = 64,
                 dataSet_Val = None, 
                 model_save_dir : str =  None):
+        '''
+            Initializes a new instance of the class fiterImgToImg.
+
+            Args:
+                model : nn.Module
+                    The model to train.
+                dataSet : Dataset
+                    The dataset containing the training data.
+                    The input img and the ouPut img need to be compatible with
+                    the model input and the modelOutPut respective.
+                device : str
+                    The environment devicedevice where we will do our calculations.
+                batch_size : int, optional
+                    The batch size used for training (default is 64)
+                dataSet_Val : Dataset, optional
+                    The validation data set. 
+                model_save_dir : str, optional
+                    The path were we save the model
+        '''
 
         if(model_save_dir is None):
             raise ValueError('model_save_dir could not be None')
 
         #* Initialize history
         self.history = {
-            "train_MAE" : [],
-            "val_MAE"   : [],
+            "train_MAE" : [], #* int list
+            "val_MAE"   : [], #* pair(int, int) list
             #todo add the PSNR, or SSIM, FID
         }
 
         #* Start the class attributes
-        self.dataSet     = dataSet
         self.model       = model
+        self.dataSet     = dataSet
         self.device      = device
         self.batch_size  = batch_size
         self.dataSet_Val = dataSet_Val
         self.model_save_dir  = model_save_dir
+        self.training_epochs = 0
 
         #* Initialize data loaders
         self.data_loader = DataLoader(
@@ -182,11 +130,27 @@ class fitertImgToImg():
                                         num_workers = 0,
                                         shuffle = True
             )
+        else:
+            self.data_loader_Val = None
 
     def getMAE(self,
-        data_loader : DataLoader, 
-        criterion : torch.nn.Module = torch.nn.CrossEntropyLoss(),
-        ):
+            data_loader : DataLoader, 
+            criterion : torch.nn.Module = torch.nn.CrossEntropyLoss(),
+            ):
+        '''
+            Compute and return the MAE in 'data_loader' using 'criterion'.
+            
+            Args:
+            -----
+                data_loader : torch.utils.data.DataLoader  
+                    index list of the batch tensors of the dataset
+                criterion :  torch.nn.Module, optional
+                    loss function of the model
+
+            Returns
+            -------
+                Return a the value of MAE in 'data_loader' using 'criterion'.
+        '''
 
         size_Data_loader = len(data_loader.dataset)
         model_MAE = 0
@@ -206,15 +170,28 @@ class fitertImgToImg():
         return model_MAE/size_Data_loader
 
     def trainModel(self,
-                opt_model  : torch.optim, 
+                opt_model  : torch.optim.Optimizer, #todo test 
                 criterion  : torch.nn.Module = torch.nn.CrossEntropyLoss(),
                 num_epochs : int = 1):
         '''
-            Funtion for train the model
+            Train the model in the device using 'num_epochs', 'criterion', 
+            'opt_model' and the dataloaders class attribut.
+            We need criterion(model(imgInput), imgOutPut). So the model(imgInput) and
+            the imgOutPut need to be compatible in criterion i.e model(imgInput).shape
+            = imgOutPut.shape ??(todo).
+
+            Args:
+            ----------
+                opt_model : torch.optim.Optimizer
+                    The optimization algorithm used for training.
+                criterion : torch.nn.Module, optional
+                    The loss function used for training (default torch.nn.CrossEntropyLoss()).
+                num_epochs : int, optional
+                    The number of epochs to train the model (default is 1).
         '''
 
-        if num_epochs < 0:
-            raise ValueError('num_epochs should be non-negative')
+        if num_epochs <= 0:
+            raise ValueError('num_epochs should be positive')
         
         sizeDataSet =len(self.data_loader.dataset)
         self.model.to(self.device)
@@ -240,15 +217,14 @@ class fitertImgToImg():
                 #* Plot the loss and the progress bar
                 loop.set_description(f"Epoch {epoch+1}/{num_epochs} process: {int((batch_idx / len(self.data_loader)) * 100)}")
                 loop.set_postfix(modelLoss = loss.data.item())
-
+            self.training_epochs += 1
             train_MAE = train_MAE / sizeDataSet
             print(f'Epoch completed, TRAIN MAE {train_MAE:.4f}')
             self.history["train_MAE"].append(train_MAE)
 
             if(self.dataSet_Val is not None):
-                val_MAE = self.getMAE(data_loader = self.data_loader_Val, criterion = criterion)
                 #* We could try a diferent criterio for the val case in the same dataset.
-
+                val_MAE = self.getMAE(data_loader = self.data_loader_Val, criterion = criterion)
                 print(f'Epoch completed, VAL MAE: {(val_MAE):4f}')
                 self.history["val_MAE"].append(val_MAE)
 
@@ -267,7 +243,94 @@ class fitertImgToImg():
                         'optimizer_state_dict' : opt_model.state_dict()
                     }, os.path.join(self.model_save_dir, f'checkpoint_epoch_{epoch + 1}_Train_MAE_{"{:.3f}".format(train_MAE)}.pt'))
 
+    def plotHistory(self, intervalTrain : list[int] = None, intervalValidation : list[int] = None):
+        #TODO test
+        '''
+            Plot a img with the historial values that we have.
 
+            Args:
+            intervalTrain : list[int], optional
+                The interval of training epochs that we will plot.
+            intervalValidation : list[int], optional
+                The interval of training epochs that we will plot.
+        '''
+
+        if self.training_epochs == 0:
+            print("self.training_epochs == 0")
+            return
+
+        #todo test???
+        if intervalTrain is None:
+            print("interval is none")
+            intervaltrain = [0, len(self.history['train_MAE'])] 
+        
+        #todo test???
+        if intervalValidation is None:
+            print("intervalValidation is none")
+            intervalValidation = [0, len(self.history['val_MAE'])]
+
+        #todo test???
+        if intervalTrain[0] < 0 or intervalTrain[0] >= self.training_epochs:
+            raise ValueError('The intervalTrain[0] need to be in [0, training_epochs of the model)')
+        if intervalTrain[1] > self.training_epochs:
+            raise ValueError('The intervalTrain[1] need to be in [0, training_epochs of the model)')
+        if intervalTrain[0] >= intervalTrain[1]:
+            raise ValueError('We need intervalTrain[0] < intervalTrain[1]')
+
+        #todo test 
+        Epochs_values     = range(intervaltrain[0], intervaltrain[1])
+        Epochs_values_Val = range(intervalValidation[0], intervalValidation[1])
+
+        #todo test
+        if(len(self.history['val_MAE']) != 0): #* Two img plots
+            print("len(Epochs_values_Val) != 0")
+            fig, (plt1, plt2) = plt.subplots(1, 2, figsize=(12, 6))
+            plt1.plot(Epochs_values,     self.history['train_MAE'], marker='o', color='blue', label='MAE')
+            plt1.set_xlabel('Epoch')
+            plt1.set_title('Train MAE')     
+            plt2.plot(Epochs_values_Val, self.history['val_MAE'], marker='o', color='blue', label='MAE')
+            plt2.set_xlabel('Epoch')
+            plt2.set_title('Validation MAE')
+            
+            #* Add legend to each subplot
+            plt1.legend()
+            plt2.legend()
+            
+            #* Show the plots
+            plt.show()
+
+        #TODO test
+        elif(len(self.history['train_MAE']) != 0): #* One img plot
+            fig, (plt1) = plt.subplots(1, 2, figsize=(12, 6))
+            plt1.plot(Epochs_values, self.history['train_MAE'], marker='o', color='blue', label='MAE')
+            plt1.set_xlabel('Epoch')
+            plt1.set_ylabel('MAE')
+            plt1.set_title('Train MAE')
+            
+            #* Add legend to each subplot
+            plt.legend()
+            #* Show the plots
+            plt.show()
+        
+        else:
+            print("len(self.history['val_MAE']) == 0, and \n len(self.history['train_MAE']) == 0")
+
+    def predict(self, index : int = 0, imgPath : str = None):
+        '''
+            Use the model in a img, or in a attribute data_loader[index]
+
+            Args:
+            -----
+                index : int
+                    Index of the img in the data_loader
+                imgPath : str
+                    Path of the image that we will use as model input.
+        '''
+        #TODO
+        if(imgPath is None):
+            print("model(self.dataLoaders[index])")
+        else:
+            print("modelImgPath")
 
 
 

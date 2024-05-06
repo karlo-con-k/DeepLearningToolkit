@@ -17,6 +17,8 @@ identity_transform = transforms.Compose([
                         ])
 
 
+
+#TODO moduling the class DataSet_Img_To_Label -> dataPreparation + DataSet_Img_To_Label. For could have more than 2 clases or only cats and dogs
 class DataSet_Img_To_Label(Dataset):
     '''
         A dataset of models from images to labels. In this case, is for a classifier cats vs dogs

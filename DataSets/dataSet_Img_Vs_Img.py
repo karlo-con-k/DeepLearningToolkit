@@ -18,16 +18,33 @@ identity_transform = transforms.Compose([
 
 class DataSet_Img_To_Img(Dataset):
     '''
-        A dataset of models from images to labels. In this case, is for a classifier cats vs dogs
-        root_Data[0]       = Path to the data images folder for the inPut
-        root_Data[1]       = Path to the data images folder for the outPut
-        transfor_In_img    = Transformation for the inPut images
-        transfor_Out_img   = Transformation for the outPut images
-        test            = If is true we will return a dataset of 10 elements for do testing
-    ''' 
+        A dataset of models from images to img. We need the path of the img input of the model
+        and img outPut i.e path of img folder and mask folder.
+
+        Attributes
+        ----------
+            data : list[tuple]
+                The list of tuples with img name, and mask. Example [(inPut_img.1.jpg, outPut_img1.1.jpg)].
+            root_Data : list[str, str]
+                The root_Data[0] is a path to the data images folder for the inPut.
+                The root_Data[1] is a path to the data images folder for the outPut.
+            transfor_InPut_img  : torchvision.transforms.Compose, optional
+                Transformation for the inPut images
+            transfor_OutPut_img : torchvision.transforms.Compose, optional
+                Transformation for the outPut images
+            test : bool
+                If is true we will return a dataset of 'dataSize' elements for do testing
+        Methods
+        -------
+            __getitem__(index):
+                Fetches and transforms the input and output images at the specified index.
+    
+            __len__(void) -> int:
+                Return size of the data set.
+    '''
 
     def __init__(self, root_Data,
-                transfor_In_img   = identity_transform, 
+                transfor_In_img  = identity_transform, 
                 transfor_Out_img = identity_transform, 
                 test     = False, 
                 dataSize = 100):
@@ -40,9 +57,9 @@ class DataSet_Img_To_Img(Dataset):
 
         
         #* Create a list of the name of the files in the root_Datas.
+        #TODO if the names are diferents this do now work well
         inPut_Images  = os.listdir(self.root_Data[0])
         outPut_Images = os.listdir(self.root_Data[1])
-        #TODO if the names are diferents this do now work well 
 
         if(len(inPut_Images) != len(outPut_Images)):
             print("len(inPut_Images) != len(outPut_Images)")
@@ -52,7 +69,7 @@ class DataSet_Img_To_Img(Dataset):
             inPut_Images  =  inPut_Images[0:dataSize]
             outPut_Images = outPut_Images[0:dataSize]
 
-        #* Save a list of tuples like ([inPut_img.1.jpg, outPut_img1.1.jpg])
+        #* Save a list of tuples like [(inPut_img.1.jpg, outPut_img1.1.jpg)]
         self.data = list(zip(inPut_Images, outPut_Images))
         print("Size data set lower definition", len(inPut_Images))
 
