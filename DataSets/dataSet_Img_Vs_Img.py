@@ -18,13 +18,14 @@ identity_transform = transforms.Compose([
 
 class DataSet_Img_To_Img(Dataset):
     '''
-        A dataset of models from images to img. We need the path of the img input of the model
-        and img outPut i.e path of img folder and mask folder.
+        A dataset of models from images to img. We need the path of the img 
+        input of the model and img outPut i.e path of img folder and mask folder.
 
         Attributes
         ----------
             data : list[tuple]
-                The list of tuples with img name, and mask. Example [(inPut_img.1.jpg, outPut_img1.1.jpg)].
+                The list of tuples with img name, and mask. Example 
+                [(inPut_img.1.jpg, outPut_img1.1.jpg)].
             root_Data : list[str, str]
                 The root_Data[0] is a path to the data images folder for the inPut.
                 The root_Data[1] is a path to the data images folder for the outPut.
@@ -54,7 +55,7 @@ class DataSet_Img_To_Img(Dataset):
         self.root_Data   = root_Data
         self.transfor_InPut_img  = transfor_In_img
         self.transfor_OutPut_img = transfor_Out_img
-
+        self.test = test
         
         #* Create a list of the name of the files in the root_Datas.
         #TODO if the names are diferents this do now work well
@@ -64,7 +65,7 @@ class DataSet_Img_To_Img(Dataset):
         if(len(inPut_Images) != len(outPut_Images)):
             print("len(inPut_Images) != len(outPut_Images)")
 
-        if(test == True):
+        if(self.test == True):
             dataSize = min(len(inPut_Images), dataSize)
             inPut_Images  =  inPut_Images[0:dataSize]
             outPut_Images = outPut_Images[0:dataSize]
