@@ -70,14 +70,15 @@ class model_U_Net(nn.Module):
                     kernel_size  = kernel_size,
                     stride = stride
                     ), 
-            nn.SiLU(), #TODO use SilU
+            nn.SiLU(), #* the origin model use Relu
+            nn.BatchNorm2d(out_channels), #* The origin model do not use batchNorm
             nn.Conv2d(
                     in_channels  = out_channels,
                     out_channels = out_channels,
                     kernel_size  = kernel_size,
                     stride = stride
                     ), 
-            nn.SiLU() #TODO use SilU
+            nn.SiLU() #* the origin model use Relu
         )
 
     def convUp_block(self, 
@@ -95,6 +96,7 @@ class model_U_Net(nn.Module):
                             padding = 1,
                             output_padding = 1
                             ),
+            nn.BatchNorm2d(out_channels), 
             nn.ReLU()
         )
 
@@ -158,72 +160,42 @@ class model_u_Net(model_U_Net):
     def forward(self, inPut):
 
         outPut = self.conv1(inPut)
-        # print(outPut.shape)
         copy1  = transforms.Resize((72, 72))(outPut) #todo
-        # print(copy1.shape)
-        # plot_img_tensor(copy1[0], [0])
-        
+
         outPut = self.maxPol1(outPut)
-        # print(outPut.shape)
 
         outPut = self.conv2(outPut)
-        # print(outPut.shape)
         copy2  = transforms.Resize((40, 40))(outPut)
-        # print(copy2.shape)
-        # plot_img_tensor(copy2[0], [0])
         outPut = self.maxPol2(outPut)
-        # print(outPut.shape)
 
         outPut = self.conv3(outPut)
-        # print(outPut.shape)
         copy3  = transforms.Resize((24, 24))(outPut) #* must be 104x104x512
-        # print(copy3.shape)
-        # plot_img_tensor(copy3[0], [0])
         outPut = self.maxPol3(outPut)
-        # print(outPut.shape)
 
         outPut = self.conv4(outPut)
-        # print(outPut.shape)
         copy4  = transforms.Resize((16, 16))(outPut)
-        # print(copy4.shape)
-        # plot_img_tensor(copy4[0], [0])
         #todo maxPol ? 
         outPut = self.maxPol4(outPut)
-        # print(outPut.shape)
 
         outPut = self.conv5(outPut)
-        # print(outPut.shape)
 
         outPut = self.upConv1(outPut)
-        # print(outPut.shape)
         outPut = torch.cat((outPut, copy4), dim=1)
-        # print(outPut.shape)
         outPut = self.conv6(outPut)
-        # print(outPut.shape)
 
         outPut = self.upConv2(outPut)
-        # print(outPut.shape)
         outPut = torch.cat((outPut, copy3), dim = 1)         #* concatenate the tensors
-        # print(outPut.shape)
         outPut = self.conv7(outPut)
-        # print(outPut.shape)
 
         outPut = self.upConv3(outPut)
-        # print(outPut.shape)
         outPut = torch.cat((outPut, copy2), dim= 1)
-        # print(outPut.shape)
         outPut = self.conv8(outPut)
-        # print(outPut.shape)
 
         outPut = self.upConv4(outPut)
-        # print(outPut.shape)
         outPut = torch.cat((outPut, copy1), dim= 1)
-        # print(outPut.shape)
         outPut = self.conv9(outPut)
-        # print("outPut = self.conv9 = ", outPut.shape)
         outPut = self.lastConv(outPut)
 
         outPut = self.softMax(outPut)
-        # print("out")
 
         return outPut
