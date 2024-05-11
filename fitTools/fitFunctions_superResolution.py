@@ -170,9 +170,10 @@ class fitertImgToImg():
         return model_MAE/size_Data_loader
 
     def trainModel(self,
-                opt_model  : torch.optim.Optimizer, #todo test 
+                opt_model  : torch.optim.Optimizer, 
                 criterion  : torch.nn.Module = torch.nn.CrossEntropyLoss(),
-                num_epochs : int = 1):
+                num_epochs : int  = 1,
+                getValMAE  : bool = False):
         '''
             Train the model in the device using 'num_epochs', 'criterion', 
             'opt_model' and the dataloaders class attribut.
@@ -191,7 +192,7 @@ class fitertImgToImg():
         '''
 
         if num_epochs <= 0:
-            raise ValueError('num_epochs should be positive')
+            raise ValueError('The num_epochs should be positive')
         
         sizeDataSet =len(self.data_loader.dataset)
         self.model.to(self.device)
@@ -222,7 +223,7 @@ class fitertImgToImg():
             print(f'Epoch completed, TRAIN MAE {train_MAE:.4f}')
             self.history["train_MAE"].append(train_MAE)
 
-            if(self.dataSet_Val is not None):
+            if((self.dataSet_Val is not None) and getValMAE == True):
                 #* We could try a diferent criterio for the val case in the same dataset.
                 val_MAE = self.getMAE(data_loader = self.data_loader_Val, criterion = criterion)
                 print(f'Epoch completed, VAL MAE: {(val_MAE):4f}')
@@ -241,68 +242,66 @@ class fitertImgToImg():
                     torch.save({
                         'model_state_dict' : self.model.state_dict(),
                         'optimizer_state_dict' : opt_model.state_dict()
-                    }, os.path.join(self.model_save_dir, f'checkpoint_epoch_{epoch + 1}_Train_MAE_{"{:.3f}".format(train_MAE)}.pt'))
+                    }, os.path.join(self.model_save_dir, f'checkpoint_epoch_{epoch + 1}_Train_MAE_{"{:.5f}".format(train_MAE)}.pt'))
+    #TODO return the best model in MAE?
 
-    def plotHistory(self, intervalTrain : list[int] = None, intervalValidation : list[int] = None):
-        #TODO test
+
+    def printHistorial(self, intervalTrain : list[int] = None, intervalValidation : list[int] = None):
         '''
             Plot a img with the historial values that we have.
 
             Args:
-            intervalTrain : list[int], optional
-                The interval of training epochs that we will plot.
-            intervalValidation : list[int], optional
-                The interval of training epochs that we will plot.
+                intervalTrain : list[int], optional
+                    The interval of training epochs that we will plot.
+                intervalValidation : list[int], optional
+                    The interval of training epochs that we will plot.
         '''
 
         if self.training_epochs == 0:
-            print("self.training_epochs == 0")
+            print("self.training_epochs == 0 i.e model was not trained")
             return
 
-        #todo test???
         if intervalTrain is None:
-            print("interval is none")
-            intervaltrain = [0, len(self.history['train_MAE'])] 
-        
-        #todo test???
+            intervalTrain = [0, len(self.history['train_MAE'])]
+
         if intervalValidation is None:
-            print("intervalValidation is none")
             intervalValidation = [0, len(self.history['val_MAE'])]
 
-        #todo test???
-        if intervalTrain[0] < 0 or intervalTrain[0] >= self.training_epochs:
+        if intervalTrain[0] < 0 or intervalTrain[0] > self.training_epochs:
             raise ValueError('The intervalTrain[0] need to be in [0, training_epochs of the model)')
         if intervalTrain[1] > self.training_epochs:
             raise ValueError('The intervalTrain[1] need to be in [0, training_epochs of the model)')
         if intervalTrain[0] >= intervalTrain[1]:
             raise ValueError('We need intervalTrain[0] < intervalTrain[1]')
+        if intervalValidation[0] < 0 or intervalValidation[0] > self.training_epochs:
+            raise ValueError('The intervalValidation[0] need to be in [0, training_epochs of the model)')
+        if intervalValidation[1] > self.training_epochs:
+            raise ValueError('The intervalValidation[1] need to be in [0, training_epochs of the model)')
+        if intervalValidation[0] >= intervalValidation[1]:
+            raise ValueError('We need intervalValidation[0] < intervalValidation[1]')
 
-        #todo test 
-        Epochs_values     = range(intervaltrain[0], intervaltrain[1])
+        Epochs_values     = range(intervalTrain[0], intervalTrain[1])
         Epochs_values_Val = range(intervalValidation[0], intervalValidation[1])
 
-        #todo test
         if(len(self.history['val_MAE']) != 0): #* Two img plots
-            print("len(Epochs_values_Val) != 0")
-            fig, (plt1, plt2) = plt.subplots(1, 2, figsize=(12, 6))
-            plt1.plot(Epochs_values,     self.history['train_MAE'], marker='o', color='blue', label='MAE')
+            fig, (plt1) = plt.subplots(1, 1, figsize=(12, 6))
+            plt1.plot(Epochs_values,   self.history['train_MAE'][intervalTrain[0]: intervalTrain[1]], marker='o', color='blue', label='train MAE')
             plt1.set_xlabel('Epoch')
             plt1.set_title('Train MAE')     
-            plt2.plot(Epochs_values_Val, self.history['val_MAE'], marker='o', color='blue', label='MAE')
-            plt2.set_xlabel('Epoch')
-            plt2.set_title('Validation MAE')
-            
+            plt1.plot(Epochs_values_Val, self.history['val_MAE'][intervalValidation[0]: intervalValidation[1]], marker='o', color='red', label='validation MAE')
+            plt1.set_xlabel('Epoch')
+            plt1.set_title('Validation MAE Vs Train MAE')
+
             #* Add legend to each subplot
             plt1.legend()
-            plt2.legend()
-            
+            plt1.legend()
+
             #* Show the plots
             plt.show()
 
-        #TODO test
         elif(len(self.history['train_MAE']) != 0): #* One img plot
             fig, (plt1) = plt.subplots(1, 2, figsize=(12, 6))
-            plt1.plot(Epochs_values, self.history['train_MAE'], marker='o', color='blue', label='MAE')
+            plt1.plot(Epochs_values, self.history['train_MAE'][Epochs_values[0] : Epochs_values[-1]], marker='o', color='blue', label='MAE')
             plt1.set_xlabel('Epoch')
             plt1.set_ylabel('MAE')
             plt1.set_title('Train MAE')
@@ -332,7 +331,15 @@ class fitertImgToImg():
         else:
             print("modelImgPath")
 
+    def getDataBatch(self, index : int = 0):
+        '''
+            Get the batch 
+        '''
 
+        for idx, (imgInput, imgOutPut) in enumerate(self.data_loader):
+                return imgInput, imgOutPut
+
+        return None, None
 
 class fiterU_Net(fitertImgToImg):
 
@@ -345,10 +352,51 @@ class fiterU_Net(fitertImgToImg):
                 model_save_dir: str = None):
         super().__init__(model, dataSet, device, batch_size, dataSet_Val, model_save_dir)
 
+    def getMAE(self,
+            data_loader : DataLoader, 
+            criterion : torch.nn.Module = torch.nn.CrossEntropyLoss(),
+            ):
+        '''
+            Compute and return the MAE in 'data_loader' using 'criterion'.
+            
+            Args:
+            -----
+                data_loader : torch.utils.data.DataLoader  
+                    index list of the batch tensors of the dataset
+                criterion :  torch.nn.Module, optional
+                    loss function of the model
+
+            Returns
+            -------
+                Return a the value of MAE in 'data_loader' using 'criterion'.
+        '''
+
+        size_Data_loader = len(data_loader.dataset)
+        model_MAE = 0
+
+        if size_Data_loader == 0:
+            raise ValueError('The data set should not be empty.')
+
+        with torch.no_grad():
+            for (imgInput, imgOutPut) in data_loader:
+                imgInput    =  imgInput.to(self.device)
+                imgOutPut   = imgOutPut.to(self.device, torch.long)
+                modelOutPut = self.model(imgInput)
+
+                modelOutPut = modelOutPut.view(modelOutPut.shape[0], 2, -1)
+                imgOutPut = imgOutPut.view(imgOutPut.shape[0],  1, 68*68).squeeze(1)
+                imgOutPut = imgOutPut.squeeze(1)
+                loss = criterion(modelOutPut, imgOutPut)
+                model_MAE += loss.item()*self.batch_size
+
+        return model_MAE/size_Data_loader
+
+
     def trainModel(self,
                 opt_model  : torch.optim, 
                 criterion  : torch.nn.Module = torch.nn.CrossEntropyLoss(),
-                num_epochs : int = 1):
+                num_epochs : int = 1,
+                getValMAE  : bool = False):
         '''
             Funtion for train the model U-Net, we only change the line 
             loss = criterion(modelOutPut, imgOutPut) for the line
@@ -369,20 +417,12 @@ class fiterU_Net(fitertImgToImg):
                 imgInput  =  imgInput.to(self.device)
                 imgOutPut = imgOutPut.to(self.device, torch.long)
                 opt_model.zero_grad()
-
                 modelOutPut = self.model(imgInput)
-                # modelOutPut = modelOutPut
-                # imgOutPut   = imgOutPut
-                
+
                 #* Get the batch loss and computing train MAE
-
-                # print(modelOutPut.shape, imgOutPut.shape)
-                # print(imgOutPut.shape)
-                # print(imgOutPut.shape)
-                modelOutPut = modelOutPut.view(imgInput.shape[0], 2, -1)
-                imgOutPut = imgOutPut.view(imgInput.shape[0],  1, 68*68).squeeze(1)
+                modelOutPut = modelOutPut.view(modelOutPut.shape[0], 2, -1)
+                imgOutPut = imgOutPut.view(imgOutPut.shape[0],  1, 68*68).squeeze(1)
                 imgOutPut = imgOutPut.squeeze(1)
-
                 loss       =  criterion(modelOutPut, imgOutPut)
                 train_MAE += loss.item()*imgInput.shape[0] #* imgInput.shape[0] = self.batch_size, but the last batch could be diferente size
 
@@ -394,11 +434,12 @@ class fiterU_Net(fitertImgToImg):
                 loop.set_description(f"Epoch {epoch+1}/{num_epochs} process: {int((batch_idx / len(self.data_loader)) * 100)}")
                 loop.set_postfix(modelLoss = loss.data.item())
 
+            self.training_epochs += 1
             train_MAE = train_MAE / sizeDataSet
             print(f'Epoch completed, TRAIN MAE {train_MAE:.4f}')
             self.history["train_MAE"].append(train_MAE)
 
-            if(self.dataSet_Val is not None):
+            if((self.dataSet_Val is not None) and getValMAE == True):
                 val_MAE = self.getMAE(data_loader = self.data_loader_Val, criterion = criterion)
                 #* We could try a diferent criterio for the val case in the same dataset.
 
