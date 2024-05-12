@@ -33,8 +33,10 @@ def plot_img_tensor(tensor,
     image_array = np.transpose(image_array, (1, 2, 0))
 
     ax.imshow(image_array)
+    cbar = plt.colorbar(ax.imshow(image_array))
+    cbar.set_label('Intensity')
     ax.axis('off')  # Turn off axis
     ax.set_title(title)
-    
+
     if localplt is None:
         plt.show()
