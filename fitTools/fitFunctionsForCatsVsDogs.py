@@ -196,7 +196,8 @@ class trainerCatsVsDogs:
         -------
         trainModel(opt_model   : torch.optim, 
                     criterion  : torch.nn.Module = torch.nn.CrossEntropyLoss(),
-                    num_epochs : int = 1) -> None:
+                    num_epochs : int = 1
+                    ) -> None:
             Train the model for 'num_epochs' epochs, using the loss function 'criterion' 
             and the optimizer 'opt_model'.
 
