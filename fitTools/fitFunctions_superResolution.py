@@ -245,8 +245,30 @@ class fitertImgToImg():
                     }, os.path.join(self.model_save_dir, f'checkpoint_epoch_{epoch + 1}_Train_MAE_{"{:.5f}".format(train_MAE)}.pt'))
     #TODO return the best model in MAE?
 
+    def toggle_trainingLayers(self, layers_list : list[str], enable : bool):
+        '''
+            This function will enable or disable the layers in the layers_list for the 
+            training. Afther enable the layers we will print all the enable layers.
 
-    def printHistorial(self, intervalTrain : list[int] = None, intervalValidation : list[int] = None):
+            Args:
+            -----
+                layers_list : list[str]
+                    List with the layers name that we will enable for the training.
+                enable : bool
+                    True if the layer will be enable, false if the layer will be disable.
+        '''
+
+        for name, param in self.model.named_parameters():
+            if any(layer_name in name for layer_name in layers_list):
+                param.requires_grad = enable
+
+        for name, param in self.model.named_parameters():
+            if(param.requires_grad == True):
+                print(f"{name} : {param.requires_grad}")
+
+    def printHistorial(self, 
+                        intervalTrain : list[int] = None, 
+                        intervalValidation : list[int] = None):
         '''
             Plot a img with the historial values that we have.
 
@@ -295,7 +317,6 @@ class fitertImgToImg():
             #* Add legend to each subplot
             plt1.legend()
             plt1.legend()
-
             #* Show the plots
             plt.show()
 
@@ -337,7 +358,8 @@ class fitertImgToImg():
         '''
 
         for idx, (imgInput, imgOutPut) in enumerate(self.data_loader):
-                return imgInput, imgOutPut
+                if idx == index:
+                    return imgInput, imgOutPut
 
         return None, None
 
@@ -358,7 +380,7 @@ class fiterU_Net(fitertImgToImg):
             ):
         '''
             Compute and return the MAE in 'data_loader' using 'criterion'.
-            
+
             Args:
             -----
                 data_loader : torch.utils.data.DataLoader  
