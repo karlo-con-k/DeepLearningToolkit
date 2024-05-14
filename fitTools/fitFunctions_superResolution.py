@@ -354,10 +354,19 @@ class fitertImgToImg():
 
     def getDataBatch(self, index : int = 0):
         '''
-            Get the batch 
+            Get the a batch in data_loader_Val for do testing.
+            
+            Args
+            ----
+                index : int = 0, optional
+                    The index of the tensor batch in the data loader val.
+            
+            Returns
+            -------
+                Returns a data batch of the validation data set.
         '''
 
-        for idx, (imgInput, imgOutPut) in enumerate(self.data_loader):
+        for idx, (imgInput, imgOutPut) in enumerate(self.data_loader_Val):
                 if idx == index:
                     return imgInput, imgOutPut
 
